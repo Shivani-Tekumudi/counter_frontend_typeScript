@@ -1,55 +1,88 @@
-describe("Counter App", () => {
+describe("React Calculator Tests", () => {
   beforeEach(() => {
-    cy.visit("http://localhost:3000");
+    cy.visit("http://localhost:3000"); // Replace with your application's URL
   });
 
-  // 1. Initial State Verification
-  it("should display initial count as 0", () => {
-    cy.contains("Count: 0");
+  describe("Rendering and Layout", () => {
+    it("renders calculator display and at least 16 buttons", () => {
+      cy.get('input[type="text"]').should("be.visible");
+      cy.get('button, input[type="button"]').should("have.length.at.least", 16);
+    });
   });
 
-  // 2. Increment Functionality
-  it("should increment count by 1 on Increment button click", () => {
-    cy.get("button").contains("Increment").click();
-    cy.contains("Count: 1");
+  describe("Button Interactions", () => {
+    it("updates display on button click", () => {
+      ["1", "2", "+", "3"].forEach((value) => {
+        cy.get('button, input[type="button"]').contains(value).click();
+      });
+      cy.get('input[type="text"]').should("have.value", "12+3");
+    });
   });
 
-  // 3. Decrement Functionality
-  it("should decrement count by 1 on Decrement button click", () => {
-    cy.get("button").contains("Decrement").click();
-    cy.contains("Count: -1");
+  describe("Calculation Accuracy", () => {
+    const operations = [
+      { expression: ["2", "+", "3"], expectedResult: "5" },
+      { expression: ["5", "-", "2"], expectedResult: "3" },
+      { expression: ["4", "*", "5"], expectedResult: "20" },
+      { expression: ["8", "/", "2"], expectedResult: "4" },
+    ];
+
+    operations.forEach((op) => {
+      it(`correctly calculates ${op.expression.join(" ")}`, () => {
+        op.expression.forEach((value) => {
+          cy.get('button, input[type="button"]').contains(value).click();
+        });
+        cy.get('button, input[type="button"]').contains("=").click();
+        cy.get("body").should("contain", op.expectedResult);
+      });
+    });
+
+    it("follows BODMAS rules in calculations", () => {
+      ["2", "+", "3", "*", "4", "-", "5", "/", "1", "="].forEach((value) => {
+        cy.get('button, input[type="button"]').contains(value).click();
+      });
+      cy.get("body").should("contain", "9");
+    });
   });
 
-  // 4. Continuous Increment
-  it("should increment count correctly on multiple Increment clicks", () => {
-    const clicks = 5;
-    for (let i = 0; i < clicks; i++) {
-      cy.get("button").contains("Increment").click();
-    }
-    cy.contains(`Count: ${clicks}`);
+  describe("Edge Case Handling", () => {
+    it("handles division by zero", () => {
+      ["1", "/", "0", "="].forEach((value) => {
+        cy.get('button, input[type="button"]').contains(value).click();
+      });
+      cy.get("div").should("contain", "Infinity"); // Adjust based on calculator's handling of division by zero
+    });
+    // Handles 0/0
+    it("handles division zero by zero", () => {
+      ["0", "/", "0", "="].forEach((value) => {
+        cy.get('button, input[type="button"]').contains(value).click();
+      });
+      cy.get("div").should("contain", "NaN"); // Adjust based on calculator's handling of division by zero
+    });
+
+    it('handles incomplete expression (e.g., pressing "=" without complete expression)', () => {
+      cy.get('button, input[type="button"]').contains("=").click();
+      cy.get("div").should("contain", "Error"); // Assuming calculator does not show an error for incomplete expression
+    });
   });
 
-  // 5. Continuous Decrement
-  it("should decrement count correctly on multiple Decrement clicks", () => {
-    const clicks = 5;
-    for (let i = 0; i < clicks; i++) {
-      cy.get("button").contains("Decrement").click();
-    }
-    cy.contains(`Count: -${clicks}`);
+  describe("Clear Functionality", () => {
+    it("clears input and result", () => {
+      ["2", "+", "2", "=", "C"].forEach((value) => {
+        cy.get('button, input[type="button"]').contains(value).click();
+      });
+      cy.get('input[type="text"]').should("have.value", "");
+      cy.get("div").contains("Error").should("not.exist");
+    });
   });
 
-  // 6. Increment and Decrement Interplay
-  it("should correctly update count with alternating Increment and Decrement clicks", () => {
-    cy.get("button").contains("Increment").click();
-    cy.get("button").contains("Decrement").click();
-    cy.get("button").contains("Increment").click();
-    cy.contains("Count: 1");
-  });
-
-  // 7. Negative Count Verification
-  it("should allow count to go below 0", () => {
-    cy.get("button").contains("Decrement").click();
-    cy.get("button").contains("Decrement").click();
-    cy.contains("Count: -2");
+  describe("Output Display", () => {
+    it("shows calculation result on the web page", () => {
+      ["2", "+", "2", "="].forEach((value) => {
+        cy.get('button, input[type="button"]').contains(value).click();
+      });
+      cy.get("div").contains("4").should("be.visible");
+    });
   });
 });
+
