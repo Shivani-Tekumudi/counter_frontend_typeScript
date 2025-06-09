@@ -1,4 +1,4 @@
-import { ReactEventHandler, useState } from "react"
+import {  useState } from "react"
 
 export default function Counter(){
 
